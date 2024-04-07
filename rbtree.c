@@ -8,6 +8,12 @@ static node_t *_insert_node(node_t *n, const key_t key, node_t *nil);
 
 static int _black_height(node_t *t);
 
+static void _left_rotate(rbtree *t, node_t *n);
+
+static void _right_rotate(rbtree *t, node_t *n);
+
+static void _fix_balance(rbtree *t, node_t *n);
+
 rbtree *new_rbtree(void) {
     rbtree *p = (rbtree *) calloc(1, sizeof(rbtree));
     p->nil = (node_t *) calloc(1, sizeof(node_t));
@@ -16,8 +22,8 @@ rbtree *new_rbtree(void) {
     return p;
 }
 
+
 void delete_rbtree(rbtree *t) {
-    // TODO: reclaim the tree nodes's memory
     _delete_node(t->root, t->nil);
     free(t->nil);
     free(t);
@@ -40,61 +46,132 @@ static void _delete_node(node_t *n, node_t *nil) {
 }
 
 node_t *rbtree_insert(rbtree *t, const key_t key) {
-    // TODO: implement insert
-    if (t->root == t->nil) {
-        return t->root = _insert_node(t->root, key, t->nil);
-    } else
-        return _insert_node(t->root, key, t->nil
-        );
+    node_t *p = t->nil;
+    node_t *c = t->root;
+    while (c != t->nil) {
+        p = c;
+        if (c->key <= key) {
+            c = c->right;
+        } else {
+            c = p->left;
+        }
+    }
+    node_t *n = (node_t *) calloc(1, sizeof(node_t));
+    n->parent = p;
+    n->key = key;
+    n->left = t->nil;
+    n->right = t->nil;
+    n->color = RBTREE_RED;
+    if (p == t->nil) {
+        t->root = n;
+    } else if (p->key <= key) {
+        p->right = n;
+    } else {
+        p->left = n;
+    }
+    _fix_balance(t, n);
+    return n;
 }
 
-node_t *_insert_node(node_t *t, const key_t key, node_t *nil) {
-    if (t == NULL) {
-        return NULL;
-    }
-    if (t == nil) {
-        node_t *n = (node_t *) calloc(1, sizeof(node_t));
-        n->left = nil;
-        n->right = nil;
-        n->parent = nil;
-        n->key = key;
-        return n;
-    }
-    node_t **next;
-    if (t->key > key) {
-        next = &(t->left);
-    } else {
-        next = &(t->right);
-    }
-    node_t *tmp = _insert_node(*next, key, nil);
-    tmp->parent = t;
-    *next = tmp;
-    return t;
-}
 
 node_t *rbtree_find(const rbtree *t, const key_t key) {
-    // TODO: implement find
     return t->root;
 }
 
 node_t *rbtree_min(const rbtree *t) {
-    // TODO: implement find
     return t->root;
 }
 
 node_t *rbtree_max(const rbtree *t) {
-    // TODO: implement find
     return t->root;
 }
 
 int rbtree_erase(rbtree *t, node_t *p) {
-    // TODO: implement erase
     return 0;
 }
 
 int rbtree_to_array(const rbtree *t, key_t *arr, const size_t n) {
-    // TODO: implement to_array
     return 0;
 }
-//static int _black_height(node_t *t){
-//}
+
+static int _black_height(node_t *t) {
+    return 1;
+}
+
+static void _left_rotate(rbtree *t, node_t *n) {
+    node_t *m = n->right;
+    n->right = m->left; //m의 오른쪽 서브트리를 n의 왼쪽 서브트리로 연결
+    if (m->left != t->nil) {
+        m->left->parent = n;
+    }
+
+    m->parent = n->parent;
+    if (n->parent == t->nil) {
+        t->root = m;
+    } else if (n == n->parent->left) {
+        n->parent->left = m;
+    } else {
+        n->parent->right = m;
+    }
+    m->left = n; // 멋있다 김남훈
+    n->parent = m;
+}
+
+static void _right_rotate(rbtree *t, node_t *n) {
+    node_t *m = n->left;
+    n->left = m->right; //m의 오른쪽 서브트리를 n의 왼쪽 서브트리로 연결
+    if (m->right != t->nil) {
+        m->right->parent = n;
+    }
+
+    m->parent = n->parent;
+    if (n->parent == t->nil) {
+        t->root = m;
+    } else if (n == n->parent->left) {
+        n->parent->left = m;
+    } else {
+        n->parent->right = m;
+    }
+    m->right = n;
+    n->parent = m;
+}
+
+static void _fix_balance(rbtree *t, node_t *n) {
+    node_t *m;
+    while (n->parent->color == RBTREE_RED) {
+        if (n->parent == n->parent->parent->left) {
+            m = n->parent->parent->right; // m -> 삼촌
+            if (m->color == RBTREE_RED) {//case 1
+                n->parent->color = RBTREE_BLACK;
+                m->color = RBTREE_BLACK;
+                m->parent->color = RBTREE_BLACK;
+                n = n->parent->parent;
+            } else {
+                if (n == n->parent->right) { // case 2
+                    n = n->parent;
+                    _left_rotate(t, n);
+                }
+                n->parent->color = RBTREE_BLACK;
+                n->parent->parent->color = RBTREE_RED;
+                _right_rotate(t, n->parent->parent);
+            }
+        } else {
+            m = n->parent->parent->left; // m -> 삼촌
+            if (m->color == RBTREE_RED) {//case 1
+                n->parent->color = RBTREE_BLACK;
+                m->color = RBTREE_BLACK;
+                m->parent->color = RBTREE_BLACK;
+                n = n->parent->parent;
+            } else {
+                if (n == n->parent->left) { // case 2
+                    n = n->parent;
+                    _right_rotate(t, n);
+                }
+                n->parent->color = RBTREE_BLACK;
+                n->parent->parent->color = RBTREE_RED;
+                _left_rotate(t, n->parent->parent);
+            }
+        }
+        t->root->color = RBTREE_BLACK;
+    }
+}
