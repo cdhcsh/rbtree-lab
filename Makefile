@@ -2,10 +2,9 @@
 
 CFLAGS=-Wall -g -DSENTINEL
 
-all: driver
-
-execute:
+test: clean build
 	./driver
+	valgrind ./driver
 
 build : driver
 
