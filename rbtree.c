@@ -50,6 +50,7 @@ static void _delete_node(node_t *n, node_t *nil) {
     if (n->right != nil) {
         _delete_node(n->right, nil);
     }
+    free(n);
 }
 
 node_t *rbtree_insert(rbtree *t, const key_t key) {
