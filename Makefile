@@ -2,6 +2,8 @@
 
 CFLAGS=-Wall -g -DSENTINEL
 
+all: driver
+
 execute:
 	./driver
 
