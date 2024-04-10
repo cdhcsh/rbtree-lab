@@ -1,7 +1,6 @@
 #include "rbtree.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 
 static void _delete_node(node_t *n, node_t *nil);
 
